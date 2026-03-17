@@ -1,0 +1,231 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Wisdomania Global Platform</title>
+<style>
+body { font-family: Arial, sans-serif; background: #0f172a; color: white; text-align: center; padding: 10px; margin:0; }
+.card { background: #1e293b; border-radius: 14px; padding: 15px; margin: 15px auto; max-width: 95%; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+h1, h2, h3 { margin-bottom: 5px; font-size: 1.2em; }
+button { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+.primary { background: #22c55e; color: black; }
+.secondary { background: #3b82f6; }
+.share { background: #f59e0b; color: black; }
+input, textarea { padding: 10px; border-radius: 6px; border: none; width: 90%; margin: 10px 0; font-size: 16px; }
+#result, #birthResult, #oracleResult, #wheelResult, #cardText, #score, #level, #coins, #streak { margin-top: 10px; font-weight: bold; word-wrap: break-word; }
+footer { margin-top: 20px; font-size: 12px; color: #9ca3af; padding-bottom: 10px; }
+.sublime { margin-top: 15px; font-size: 14px; color: #fbbf24; font-style: italic; }
+.badge { background: #f43f5e; color: white; padding: 5px 10px; border-radius: 8px; margin: 5px; display: inline-block; font-size: 13px; }
+#wheelCanvas { margin: 15px auto; display: block; max-width: 95%; }
+@media (max-width: 480px) {
+  h1, h2, h3 { font-size: 1em; }
+  button, input, textarea { font-size: 14px; padding: 10px; }
+  .sublime { font-size: 13px; }
+}
+</style>
+</head>
+<body><h1>Wisdomania</h1>
+<p>Align Your Day With Wisdom</p><div class="card">
+<h2 id="dayTitle"></h2>
+<p id="question"></p>
+<button onclick="answer(0)">Start a new project</button>
+<button onclick="answer(1)">Share information</button>
+<button onclick="answer(2)">Reset and reflect</button>
+<button onclick="answer(3)">Harvest or build resources</button>
+<p id="result"></p>
+<p>Wisdom Coins: <span id="coins">0</span> | Daily Streak: <span id="streak">0</span></p>
+</div><div class="card">
+<h3>Spin Destiny Wheel</h3>
+<canvas id="wheelCanvas" width="300" height="300"></canvas>
+<button class="primary" onclick="spinWheel()">Spin</button>
+<p id="wheelResult"></p>
+</div><div class="card">
+<h3>Daily Wisdom Card</h3>
+<div id="cardContainer" style="perspective: 1000px;">
+  <div id="cardText" style="background:#3b4252; border-radius:12px; padding:15px; transform-style: preserve-3d; transition: transform 0.8s;">Draw your card</div>
+</div>
+<div id="badges"></div>
+<button class="primary" onclick="drawCard()">Draw Card</button>
+</div><div class="card">
+<h3>Find Your Birth Market Day</h3>
+<input type="date" id="birthdate">
+<button class="secondary" onclick="calculateBirthDay()">Reveal</button>
+<p id="birthResult"></p>
+<button class="share" onclick="shareResult()">Share Result</button>
+</div><div class="card">
+<h3>Ask The Wisdom Oracle</h3>
+<textarea id="oracleQuestion" placeholder="Ask a life question..."></textarea>
+<button class="secondary" onclick="oracleAnswer()">Receive Wisdom</button>
+<p id="oracleResult"></p>
+</div><div class="card">
+<h3>Leaderboard</h3>
+<p>Your Wisdom Points: <span id="score">0</span></p>
+<p>Your Level: <span id="level">Seeker</span></p>
+</div><div class="sublime" id="sublime">
+<p>✨ Let the sublime wisdom of Wisdomania guide your journey daily ✨</p>
+</div><footer>
+  <p style="font-size:12px; color:#9ca3af;">Wisdomania – your daily guide to insight, action & growth</p>
+  <p>powered by <strong>Wisdomania Co-operative Society</strong> | <span style="font-weight:bold;">gr8trabbi™</span></p>
+</footer><script>
+const days = [
+{name: "Orie 💧", correct: 2, question: "Orie energy favors reflection and insight."},
+{name: "Afor 🌍", correct: 3, question: "Afor energy favors growth and stability."},
+{name: "Nkwo 🌬", correct: 1, question: "Nkwo energy favors communication and exchange."},
+{name: "Eke 🔥", correct: 0, question: "Eke energy favors bold action."}
+];
+
+const cards = [
+"Seek knowledge before acting.",
+"Today a conversation may open a door.",
+"Patience multiplies effort.",
+"Take one bold step today.",
+"Observe more than you speak.",
+"Share value and value returns.",
+"Plant something that will grow later.",
+"Small actions create big change."
+];
+
+const oracle = [
+"Wisdom says wait before acting.",
+"Your answer will come through conversation.",
+"A bold move will change your path.",
+"Seek knowledge first.",
+"Build patiently and results will grow.",
+"Your opportunity lies in collaboration.",
+"Action today creates tomorrow's reward.",
+"Observe carefully before deciding."
+];
+
+const wheel = [
+"Opportunity is near",
+"Communicate your idea",
+"Rest and reflect",
+"Start something new",
+"Meet someone important",
+"Knowledge will appear",
+"Take a bold action",
+"Plant a future plan"
+];
+
+let score = 0;
+let coins = 0;
+let streak = 0;
+let todayDay = getMarketDay();
+document.getElementById("dayTitle").innerText = "Today is " + todayDay.name;
+document.getElementById("question").innerText = todayDay.question;
+
+function getMarketDay(date = new Date()) {
+  let start = new Date("2026-01-01");
+  let diff = Math.floor((date - start) / (1000*60*60*24));
+  return days[(diff % 4 + 4) % 4];
+}
+
+function updateLevel() {
+  let level = "Seeker";
+  if(score > 50) level = "Apprentice";
+  if(score > 120) level = "Initiate";
+  if(score > 200) level = "Guardian";
+  if(score > 350) level = "Oracle";
+  document.getElementById("level").innerText = level;
+}
+
+function answer(choice) {
+  if(choice === todayDay.correct){
+    score += 10; coins +=5; streak+=1; addBadge();
+    document.getElementById("result").innerText = "Correct alignment +10 Wisdom, +5 Coins";
+  } else { streak=0; document.getElementById("result").innerText = "Not aligned today."; }
+  updateScore();
+}
+
+function updateScore() {
+  document.getElementById("score").innerText = score;
+  document.getElementById("coins").innerText = coins;
+  document.getElementById("streak").innerText = streak;
+  updateLevel();
+}
+
+function addBadge(){
+  if(streak%7===0){
+    let badge = document.createElement("span");
+    badge.className = "badge";
+    badge.innerText = `Weekly Streak ${streak} 🎉`;
+    document.getElementById("badges").appendChild(badge);
+  }
+}
+
+function drawCard() {
+  let cardDiv = document.getElementById("cardText");
+  cardDiv.style.transform = 'rotateY(180deg)';
+  setTimeout(()=>{cardDiv.innerText = cards[Math.floor(Math.random()*cards.length)]; cardDiv.style.transform='rotateY(0deg)';}, 400);
+}
+
+// Wheel Animation
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const segments = wheel.length;
+const colors = ['#22c55e','#3b82f6','#f59e0b','#f43f5e','#16a34a','#2563eb','#d97706','#b91c1c'];
+function drawWheel(){
+  const arc = 2*Math.PI/segments;
+  for(let i=0;i<segments;i++){
+    ctx.beginPath();
+    ctx.moveTo(150,150);
+    ctx.arc(150,150,150,i*arc,(i+1)*arc);
+    ctx.fillStyle=colors[i%colors.length];
+    ctx.fill();
+    ctx.save();
+    ctx.translate(150,150);
+    ctx.rotate((i+0.5)*arc);
+    ctx.fillStyle='#fff';
+    ctx.textAlign='right';
+    ctx.font='14px Arial';
+    ctx.fillText(wheel[i],140,5);
+    ctx.restore();
+  }
+}
+drawWheel();
+
+function spinWheel(){
+  let spins = Math.floor(Math.random()*3600+360);
+  canvas.style.transition='transform 5s ease-out';
+  canvas.style.transform=`rotate(${spins}deg)`;
+  setTimeout(()=>{
+    let segmentAngle = 360/segments;
+    let finalAngle = spins%360;
+    let index = Math.floor((360-finalAngle)/segmentAngle)%segments;
+    document.getElementById('wheelResult').innerText = wheel[index];
+    score+=5; coins+=2; streak+=1; updateScore(); addBadge();
+    canvas.style.transition='none';
+    canvas.style.transform='rotate('+(finalAngle%360)+'deg)';
+  },5000);
+}
+
+function calculateBirthDay() {
+  let date = document.getElementById("birthdate").value;
+  if(!date) return;
+  let d = new Date(date);
+  let day = getMarketDay(d);
+  let meaning = {
+    "Orie 💧":"You are intuitive and reflective.",
+    "Afor 🌍":"You build and stabilize systems.",
+    "Nkwo 🌬":"You communicate and connect people.",
+    "Eke 🔥":"You initiate action and leadership."
+  };
+  document.getElementById("birthResult").innerText = "Born on " + day.name + " — " + meaning[day.name];
+}
+
+function shareResult() {
+  let text = document.getElementById("birthResult").innerText;
+  if(navigator.share){
+    navigator.share({ title:"My Wisdomania Market Day", text:text, url:window.location.href });
+  } else {
+    alert("Copy and share: " + text);
+  }
+}
+
+function oracleAnswer() {
+  let r = oracle[Math.floor(Math.random() * oracle.length)];
+  score+=5; coins+=2; streak+=1; updateScore(); addBadge();
+  document.getElementById("oracleResult").innerText = r;
+}
+</script></body>
+</html>
